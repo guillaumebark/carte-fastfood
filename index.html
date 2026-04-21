@@ -9,6 +9,8 @@
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100vw; }
         .popup-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
+        /* Style optionnel pour s'assurer que le SVG ne déborde pas du marqueur */
+        .leaflet-marker-icon { background: none !important; border: none !important; }
     </style>
 </head>
 <body>
@@ -16,13 +18,17 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // 1. Initialisation de la carte sur la Belgique
         var map = L.map('map').setView([50.85, 4.35], 8);
 
+        // Fond de carte épuré pour faire ressortir les logos
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap &copy; CartoDB'
         }).addTo(map);
 
-        // MCDO : Carré
+        // 2. Définition des icônes
+
+        // McDo : Circulaire
         var mcdoIcon = L.icon({
             iconUrl: 'MCDO_LOGO.png',
             iconSize: [30, 30],
@@ -30,15 +36,15 @@
             popupAnchor: [0, -15]
         });
 
-        // QUICK : Rectangle allongé (Largeur 45, Hauteur 25)
+        // Quick : Rectangulaire (Ratio 3:2 analysé depuis le SVG)
         var quickIcon = L.icon({
-            iconUrl: 'Quick.png',
-            iconSize: [45, 25], 
-            iconAnchor: [22, 12],
+            iconUrl: 'quick.svg', // Utilisation du fichier SVG
+            iconSize: [36, 24],   // Ratio 3:2 (36/24 = 1.5)
+            iconAnchor: [18, 12], // Centrage exact (36/2 et 24/2)
             popupAnchor: [0, -12]
         });
 
-        // MCDO
+        // 3. Chargement de McDonald's
         fetch('mcdonalds.json')
             .then(res => res.json())
             .then(data => {
@@ -50,12 +56,14 @@
                          .bindPopup("<div class='popup-title'>McDo " + (m.city_fr || m.city_nl) + "</div>" + m.street_fr + " " + m.nr);
                     }
                 });
-            });
+            })
+            .catch(err => console.error("Erreur McDo:", err));
 
-        // QUICK
-        fetch('quick.json')
+        // 4. Chargement de Quick
+        fetch('quick.json') // Nom du fichier corrigé
             .then(res => res.json())
             .then(data => {
+                // On accède à la structure du fichier JSON Schema.org
                 const restaurants = data[0].itemListElement;
                 restaurants.forEach(entry => {
                     const info = entry.item;
@@ -64,7 +72,9 @@
                          .bindPopup("<div class='popup-title' style='color:#da291c'>Quick " + info.name + "</div>" + info.address.streetAddress);
                     }
                 });
-            });
+                console.log(restaurants.length + " Quick chargés !");
+            })
+            .catch(err => console.error("Erreur Quick:", err));
     </script>
 </body>
 </html>
