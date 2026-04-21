@@ -1,34 +1,86 @@
-// 4. Chargement de Quick (Version "Scanner" ultra-robuste)
+<!DOCTYPE html>
+<html>
+<head>
+    <title>La Belgique du Fast-Food</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; }
+        .leaflet-popup-content-wrapper { border-radius: 8px; font-family: sans-serif; }
+        .popup-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; color: #333; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 1. Initialisation de la carte
+        var map = L.map('map').setView([50.85, 4.35], 8);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CartoDB'
+        }).addTo(map);
+
+        // 2. Définition des icônes
+        var mcdoIcon = L.icon({
+            iconUrl: 'MCDO_LOGO.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
+        });
+
+        var quickIcon = L.icon({
+            iconUrl: 'Quick.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
+        });
+
+        // 3. Chargement de McDonald's
+        fetch('mcdonalds.json')
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(restau => {
+                    if (restau.lat_times_a_million) {
+                        var lat = restau.lat_times_a_million / 1000000;
+                        var lng = restau.lng_times_a_million / 1000000;
+                        L.marker([lat, lng], { icon: mcdoIcon }).addTo(map)
+                         .bindPopup("<div class='popup-title'>McDonald's " + (restau.city_fr || restau.city_nl) + "</div>" + restau.street_fr + " " + restau.nr);
+                    }
+                });
+                console.log("McDo chargés !");
+            })
+            .catch(err => console.error("Erreur McDo:", err));
+
+        // 4. Chargement de Quick (Extraction via __NEXT_DATA__)
         fetch('quick.html')
             .then(res => res.text())
             .then(htmlText => {
-                // On va chercher directement le gros bloc de données JSON caché
-                const startToken = '__NEXT_DATA__" type="application/json">';
-                const endToken = '</script>';
-                
-                const startIdx = htmlText.indexOf(startToken);
-                if (startIdx !== -1) {
-                    const dataPart = htmlText.substring(startIdx + startToken.length);
-                    const endIdx = dataPart.indexOf(endToken);
-                    const fullJson = JSON.parse(dataPart.substring(0, endIdx));
-                    
-                    // On descend dans l'arborescence du fichier Quick
+                // On cherche la balise script qui contient le JSON
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, "text/html");
+                const dataScript = doc.getElementById("__NEXT_DATA__");
+
+                if (dataScript) {
+                    const fullJson = JSON.parse(dataScript.textContent);
+                    // Chemin exact dans la structure Quick
                     const restaurants = fullJson.props.pageProps.restaurants;
 
                     restaurants.forEach(q => {
                         if (q.latitude && q.longitude) {
                             L.marker([parseFloat(q.latitude), parseFloat(q.longitude)], { icon: quickIcon }).addTo(map)
-                             .bindPopup(`
-                                <div class='popup-title'>Quick ${q.city}</div>
-                                ${q.address}<br>
-                                <small>CP: ${q.zipcode}</small>
-                             `);
+                             .bindPopup("<div class='popup-title'>Quick " + q.city + "</div>" + q.address);
                         }
                     });
-                    console.log(restaurants.length + " Quick affichés !");
+                    console.log(restaurants.length + " Quick chargés !");
                 } else {
-                    // Si la balise __NEXT_DATA__ n'est pas là, on essaie la méthode de secours
-                    console.error("Structure Quick non reconnue, tentative de secours...");
+                    console.error("Balise __NEXT_DATA__ introuvable dans quick.html");
                 }
             })
-            .catch(err => console.error("Erreur critique Quick:", err));
+            .catch(err => console.error("Erreur lecture Quick:", err));
+    </script>
+</body>
+</html>
