@@ -9,6 +9,7 @@
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100vw; }
         .leaflet-popup-content-wrapper { border-radius: 8px; font-family: sans-serif; }
+        .popup-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -16,35 +17,68 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // 1. Initialisation de la carte sur la Belgique
         var map = L.map('map').setView([50.85, 4.35], 8);
 
+        // Fond de carte pro et épuré
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap'
+            attribution: '&copy; OpenStreetMap &copy; CartoDB'
         }).addTo(map);
 
-        // --- 1. DÉFINITION DE L'ICÔNE OFFICIELLE ---
+        // 2. Définition des icônes avec tes fichiers
         var mcdoIcon = L.icon({
-            iconUrl: 'MCDO_LOGO.png', // Nom exact du fichier sur ton GitHub
-            iconSize: [30, 30],       // Taille du logo (tu peux augmenter à 40 si c'est trop petit)
-            iconAnchor: [15, 15],     // Milieu du logo (15 est la moitié de 30)
-            popupAnchor: [0, -15]     // La bulle s'ouvrira juste au-dessus du logo
+            iconUrl: 'MCDO_LOGO.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
         });
 
+        var quickIcon = L.icon({
+            iconUrl: 'Quick.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15]
+        });
+
+        // 3. Chargement de McDonald's
         fetch('mcdonalds.json')
             .then(res => res.json())
             .then(data => {
                 data.forEach(restau => {
-                    if (restau.lat_times_a_million && restau.lng_times_a_million) {
+                    if (restau.lat_times_a_million) {
                         var lat = restau.lat_times_a_million / 1000000;
                         var lng = restau.lng_times_a_million / 1000000;
-
-                        // --- 2. UTILISATION DU MARQUEUR AVEC ICÔNE ---
-                        var marker = L.marker([lat, lng], { icon: mcdoIcon }).addTo(map);
-
-                        marker.bindPopup("<b>McDo " + (restau.city_fr || restau.city_nl) + "</b><br>" + restau.street_fr + " " + restau.nr);
+                        L.marker([lat, lng], { icon: mcdoIcon }).addTo(map)
+                         .bindPopup("<div class='popup-title'>McDonald's " + (restau.city_fr || restau.city_nl) + "</div>" + restau.street_fr + " " + restau.nr);
                     }
                 });
-            });
+            })
+            .catch(err => console.error("Erreur McDo:", err));
+
+        // 4. Chargement de Quick (Extraction depuis le fichier HTML)
+        fetch('quick.html')
+            .then(res => res.text())
+            .then(htmlText => {
+                // On cherche la structure JSON cachée dans la page Quick
+                var startToken = '"restaurants":[';
+                var endToken = '],"brand"';
+                
+                var startIdx = htmlText.indexOf(startToken);
+                var endIdx = htmlText.indexOf(endToken, startIdx);
+
+                if (startIdx !== -1 && endIdx !== -1) {
+                    var jsonPart = htmlText.substring(startIdx + 14, endIdx + 1);
+                    var quickData = JSON.parse("[" + jsonPart + "]");
+
+                    quickData.forEach(q => {
+                        if (q.latitude && q.longitude) {
+                            L.marker([q.latitude, q.longitude], { icon: quickIcon }).addTo(map)
+                             .bindPopup("<div class='popup-title'>Quick " + q.city + "</div>" + q.address);
+                        }
+                    });
+                }
+            })
+            .catch(err => console.error("Erreur Quick:", err));
     </script>
 </body>
 </html>
