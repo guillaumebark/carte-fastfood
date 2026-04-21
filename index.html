@@ -22,6 +22,7 @@
             attribution: '&copy; OpenStreetMap &copy; CartoDB'
         }).addTo(map);
 
+        // MCDO : Carré
         var mcdoIcon = L.icon({
             iconUrl: 'MCDO_LOGO.png',
             iconSize: [30, 30],
@@ -29,42 +30,41 @@
             popupAnchor: [0, -15]
         });
 
+        // QUICK : Rectangle allongé (Largeur 45, Hauteur 25)
         var quickIcon = L.icon({
             iconUrl: 'Quick.png',
-            iconSize: [40, 28],      // Plus large (40) que haut (28) pour garder le ratio
-            iconAnchor: [20, 14],    // On divise par deux pour centrer (40/2 et 28/2)
-            popupAnchor: [0, -14]    // La bulle sort du haut du logo
+            iconSize: [45, 25], 
+            iconAnchor: [22, 12],
+            popupAnchor: [0, -12]
         });
 
-        // --- CHARGEMENT MCDO ---
+        // MCDO
         fetch('mcdonalds.json')
             .then(res => res.json())
             .then(data => {
                 data.forEach(m => {
-                    var lat = m.lat_times_a_million / 1000000;
-                    var lng = m.lng_times_a_million / 1000000;
-                    L.marker([lat, lng], { icon: mcdoIcon }).addTo(map)
-                     .bindPopup("<div class='popup-title'>McDo " + (m.city_fr || m.city_nl) + "</div>" + m.street_fr + " " + m.nr);
+                    if (m.lat_times_a_million) {
+                        var lat = m.lat_times_a_million / 1000000;
+                        var lng = m.lng_times_a_million / 1000000;
+                        L.marker([lat, lng], { icon: mcdoIcon }).addTo(map)
+                         .bindPopup("<div class='popup-title'>McDo " + (m.city_fr || m.city_nl) + "</div>" + m.street_fr + " " + m.nr);
+                    }
                 });
             });
 
-        // --- CHARGEMENT QUICK (Nouvelle structure) ---
-        fetch('quick.json')
+        // QUICK
+        fetch('quick_clean.json')
             .then(res => res.json())
             .then(data => {
-                // Ton fichier contient une liste d'éléments, on va dans itemListElement
                 const restaurants = data[0].itemListElement;
-
                 restaurants.forEach(entry => {
                     const info = entry.item;
-                    if (info.geo && info.geo.latitude) {
+                    if (info.geo) {
                         L.marker([info.geo.latitude, info.geo.longitude], { icon: quickIcon }).addTo(map)
                          .bindPopup("<div class='popup-title' style='color:#da291c'>Quick " + info.name + "</div>" + info.address.streetAddress);
                     }
                 });
-                console.log(restaurants.length + " Quick chargés !");
-            })
-            .catch(err => console.error("Erreur Quick:", err));
+            });
     </script>
 </body>
 </html>
