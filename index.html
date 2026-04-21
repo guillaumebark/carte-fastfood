@@ -8,8 +8,7 @@
     <style>
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100vw; }
-        .leaflet-popup-content-wrapper { border-radius: 8px; font-family: sans-serif; }
-        .popup-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; color: #333; }
+        .popup-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -17,14 +16,12 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Initialisation de la carte
         var map = L.map('map').setView([50.85, 4.35], 8);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap &copy; CartoDB'
         }).addTo(map);
 
-        // 2. Définition des icônes
         var mcdoIcon = L.icon({
             iconUrl: 'MCDO_LOGO.png',
             iconSize: [30, 30],
@@ -39,48 +36,35 @@
             popupAnchor: [0, -15]
         });
 
-        // 3. Chargement de McDonald's
+        // --- CHARGEMENT MCDO ---
         fetch('mcdonalds.json')
             .then(res => res.json())
             .then(data => {
-                data.forEach(restau => {
-                    if (restau.lat_times_a_million) {
-                        var lat = restau.lat_times_a_million / 1000000;
-                        var lng = restau.lng_times_a_million / 1000000;
-                        L.marker([lat, lng], { icon: mcdoIcon }).addTo(map)
-                         .bindPopup("<div class='popup-title'>McDonald's " + (restau.city_fr || restau.city_nl) + "</div>" + restau.street_fr + " " + restau.nr);
+                data.forEach(m => {
+                    var lat = m.lat_times_a_million / 1000000;
+                    var lng = m.lng_times_a_million / 1000000;
+                    L.marker([lat, lng], { icon: mcdoIcon }).addTo(map)
+                     .bindPopup("<div class='popup-title'>McDo " + (m.city_fr || m.city_nl) + "</div>" + m.street_fr + " " + m.nr);
+                });
+            });
+
+        // --- CHARGEMENT QUICK (Nouvelle structure) ---
+        fetch('quick_clean.json')
+            .then(res => res.json())
+            .then(data => {
+                // Ton fichier contient une liste d'éléments, on va dans itemListElement
+                const restaurants = data[0].itemListElement;
+
+                restaurants.forEach(entry => {
+                    const info = entry.item;
+                    if (info.geo && info.geo.latitude) {
+                        L.marker([info.geo.latitude, info.geo.longitude], { icon: quickIcon }).addTo(map)
+                         .bindPopup("<div class='popup-title' style='color:#da291c'>Quick " + info.name + "</div>" + info.address.streetAddress);
                     }
                 });
-                console.log("McDo chargés !");
+                console.log(restaurants.length + " Quick chargés !");
             })
-            .catch(err => console.error("Erreur McDo:", err));
-
-        // 4. Chargement de Quick (Extraction via __NEXT_DATA__)
-        fetch('quick.html')
-            .then(res => res.text())
-            .then(htmlText => {
-                // On cherche la balise script qui contient le JSON
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, "text/html");
-                const dataScript = doc.getElementById("__NEXT_DATA__");
-
-                if (dataScript) {
-                    const fullJson = JSON.parse(dataScript.textContent);
-                    // Chemin exact dans la structure Quick
-                    const restaurants = fullJson.props.pageProps.restaurants;
-
-                    restaurants.forEach(q => {
-                        if (q.latitude && q.longitude) {
-                            L.marker([parseFloat(q.latitude), parseFloat(q.longitude)], { icon: quickIcon }).addTo(map)
-                             .bindPopup("<div class='popup-title'>Quick " + q.city + "</div>" + q.address);
-                        }
-                    });
-                    console.log(restaurants.length + " Quick chargés !");
-                } else {
-                    console.error("Balise __NEXT_DATA__ introuvable dans quick.html");
-                }
-            })
-            .catch(err => console.error("Erreur lecture Quick:", err));
+            .catch(err => console.error("Erreur Quick:", err));
     </script>
 </body>
 </html>
