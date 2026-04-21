@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100vw; }
-        .popup-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
-        /* Style optionnel pour s'assurer que le SVG ne déborde pas du marqueur */
+        #map { height: 100vh; width: 100vw; background: #f8f9fa; }
+        .popup-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; color: #333; }
+        /* Style pour s'assurer que les logos ne débordent pas de leur conteneur Leaflet */
         .leaflet-marker-icon { background: none !important; border: none !important; }
     </style>
 </head>
@@ -23,24 +23,24 @@
 
         // Fond de carte épuré pour faire ressortir les logos
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CartoDB'
+            attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
         // 2. Définition des icônes
 
-        // McDo : Circulaire
+        // McDonald's : Carré rouge (Ratio 1:1 analysé depuis le PNG)
         var mcdoIcon = L.icon({
-            iconUrl: 'MCDO_LOGO.png',
-            iconSize: [30, 30],
-            iconAnchor: [15, 15],
-            popupAnchor: [0, -15]
+            iconUrl: 'MCDO_LOGO.png', // Ton fichier exact
+            iconSize: [28, 28],      // Carré de 28px
+            iconAnchor: [14, 14],    // Centrage exact (28/2 et 28/2)
+            popupAnchor: [0, -14]
         });
 
-        // Quick : Rectangulaire (Ratio 3:2 analysé depuis le SVG)
+        // Quick : Rectangle allongé (Ratio 3:2 analysé depuis le SVG)
         var quickIcon = L.icon({
-            iconUrl: 'quick.svg', // Utilisation du fichier SVG
-            iconSize: [36, 24],   // Ratio 3:2 (36/24 = 1.5)
-            iconAnchor: [18, 12], // Centrage exact (36/2 et 24/2)
+            iconUrl: 'quick.svg',    // Ton fichier exact
+            iconSize: [36, 24],      // Ratio 3:2 pour l'équilibre (36/24 = 1.5)
+            iconAnchor: [18, 12],    // Centrage exact (36/2 et 24/2)
             popupAnchor: [0, -12]
         });
 
@@ -53,14 +53,14 @@
                         var lat = m.lat_times_a_million / 1000000;
                         var lng = m.lng_times_a_million / 1000000;
                         L.marker([lat, lng], { icon: mcdoIcon }).addTo(map)
-                         .bindPopup("<div class='popup-title'>McDo " + (m.city_fr || m.city_nl) + "</div>" + m.street_fr + " " + m.nr);
+                         .bindPopup("<div class='popup-title'>McDonald's</div>");
                     }
                 });
             })
             .catch(err => console.error("Erreur McDo:", err));
 
         // 4. Chargement de Quick
-        fetch('quick.json') // Nom du fichier corrigé
+        fetch('quick.json')
             .then(res => res.json())
             .then(data => {
                 // On accède à la structure du fichier JSON Schema.org
@@ -69,7 +69,7 @@
                     const info = entry.item;
                     if (info.geo) {
                         L.marker([info.geo.latitude, info.geo.longitude], { icon: quickIcon }).addTo(map)
-                         .bindPopup("<div class='popup-title' style='color:#da291c'>Quick " + info.name + "</div>" + info.address.streetAddress);
+                         .bindPopup("<div class='popup-title' style='color:#da291c'>Quick</div>");
                     }
                 });
                 console.log(restaurants.length + " Quick chargés !");
