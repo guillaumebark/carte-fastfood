@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>La Belgique du Fast-Food</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; }
+        .leaflet-popup-content-wrapper { border-radius: 8px; font-family: sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialisation de la carte centrée sur la Belgique
+        var map = L.map('map').setView([50.85, 4.35], 8);
+
+        // Fond de carte "Pro" (Style épuré pour faire ressortir les points)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        // Chargement des données McDonald's
+        fetch('mcdonalds.json')
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(restau => {
+                    // Conversion des coordonnées (division par 1 million)
+                    var lat = restau.lat_times_a_million / 1000000;
+                    var lng = restau.lng_times_a_million / 1000000;
+
+                    // Création du marqueur
+                    var marker = L.circleMarker([lat, lng], {
+                        radius: 6,
+                        fillColor: "#ffbc0d", // Jaune McDo
+                        color: "#db0007",     // Rouge McDo
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(map);
+
+                    // Bulle d'info au clic
+                    marker.bindPopup("<b>McDo " + restau.city_fr + "</b><br>" + restau.street_fr + " " + restau.nr);
+                });
+            });
+    </script>
+</body>
+</html>
