@@ -24,10 +24,10 @@
 
         // --- 1. DÉFINITION DE L'ICÔNE OFFICIELLE ---
         var mcdoIcon = L.icon({
-            iconUrl: 'https://www.mcdonalds.be/themes/mcdo_theme/assets/images/map-marker.png',
-            iconSize: [35, 46],      // Taille de l'image
-            iconAnchor: [17, 46],    // La pointe du marqueur (milieu bas)
-            popupAnchor: [0, -40]    // Où la bulle d'info s'ouvre par rapport à l'icône
+            iconUrl: 'MCDO_LOGO.png', // Nom exact du fichier sur ton GitHub
+            iconSize: [30, 30],       // Taille du logo (tu peux augmenter à 40 si c'est trop petit)
+            iconAnchor: [15, 15],     // Milieu du logo (15 est la moitié de 30)
+            popupAnchor: [0, -15]     // La bulle s'ouvrira juste au-dessus du logo
         });
 
         fetch('mcdonalds.json')
