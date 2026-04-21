@@ -55,30 +55,35 @@
             })
             .catch(err => console.error("Erreur McDo:", err));
 
-        // 4. Chargement de Quick (Extraction depuis le fichier HTML)
+        // 4. Chargement de Quick (Extraction plus robuste)
         fetch('quick.html')
             .then(res => res.text())
             .then(htmlText => {
-                // On cherche la structure JSON cachée dans la page Quick
-                var startToken = '"restaurants":[';
-                var endToken = '],"brand"';
+                // On cherche la balise qui contient les données
+                const searchString = '"restaurants":[';
+                const startIdx = htmlText.indexOf(searchString);
                 
-                var startIdx = htmlText.indexOf(startToken);
-                var endIdx = htmlText.indexOf(endToken, startIdx);
-
-                if (startIdx !== -1 && endIdx !== -1) {
-                    var jsonPart = htmlText.substring(startIdx + 14, endIdx + 1);
-                    var quickData = JSON.parse("[" + jsonPart + "]");
+                if (startIdx !== -1) {
+                    // On coupe à partir du début de la liste [
+                    let dataSubstring = htmlText.substring(startIdx + 14);
+                    // On s'arrête à la fin de la liste ]
+                    let endIdx = dataSubstring.indexOf(']');
+                    let jsonList = dataSubstring.substring(0, endIdx + 1);
+                    
+                    const quickData = JSON.parse(jsonList);
 
                     quickData.forEach(q => {
                         if (q.latitude && q.longitude) {
-                            L.marker([q.latitude, q.longitude], { icon: quickIcon }).addTo(map)
+                            L.marker([parseFloat(q.latitude), parseFloat(q.longitude)], { icon: quickIcon }).addTo(map)
                              .bindPopup("<div class='popup-title'>Quick " + q.city + "</div>" + q.address);
                         }
                     });
+                    console.log("Quick chargés avec succès !");
+                } else {
+                    console.error("Impossible de trouver les données Quick dans le fichier.");
                 }
             })
-            .catch(err => console.error("Erreur Quick:", err));
+            .catch(err => console.error("Erreur lecture Quick:", err));
     </script>
 </body>
 </html>
