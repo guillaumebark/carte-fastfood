@@ -16,35 +16,33 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialisation de la carte centrée sur la Belgique
         var map = L.map('map').setView([50.85, 4.35], 8);
 
-        // Fond de carte "Pro" (Style épuré pour faire ressortir les points)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        // Chargement des données McDonald's
+        // --- 1. DÉFINITION DE L'ICÔNE OFFICIELLE ---
+        var mcdoIcon = L.icon({
+            iconUrl: 'https://www.mcdonalds.be/themes/mcdo_theme/assets/images/map-marker.png',
+            iconSize: [35, 46],      // Taille de l'image
+            iconAnchor: [17, 46],    // La pointe du marqueur (milieu bas)
+            popupAnchor: [0, -40]    // Où la bulle d'info s'ouvre par rapport à l'icône
+        });
+
         fetch('mcdonalds.json')
             .then(res => res.json())
             .then(data => {
                 data.forEach(restau => {
-                    // Conversion des coordonnées (division par 1 million)
-                    var lat = restau.lat_times_a_million / 1000000;
-                    var lng = restau.lng_times_a_million / 1000000;
+                    if (restau.lat_times_a_million && restau.lng_times_a_million) {
+                        var lat = restau.lat_times_a_million / 1000000;
+                        var lng = restau.lng_times_a_million / 1000000;
 
-                    // Création du marqueur
-                    var marker = L.circleMarker([lat, lng], {
-                        radius: 6,
-                        fillColor: "#ffbc0d", // Jaune McDo
-                        color: "#db0007",     // Rouge McDo
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    }).addTo(map);
+                        // --- 2. UTILISATION DU MARQUEUR AVEC ICÔNE ---
+                        var marker = L.marker([lat, lng], { icon: mcdoIcon }).addTo(map);
 
-                    // Bulle d'info au clic
-                    marker.bindPopup("<b>McDo " + restau.city_fr + "</b><br>" + restau.street_fr + " " + restau.nr);
+                        marker.bindPopup("<b>McDo " + (restau.city_fr || restau.city_nl) + "</b><br>" + restau.street_fr + " " + restau.nr);
+                    }
                 });
             });
     </script>
